@@ -38,7 +38,8 @@ function getBasket() {
   if (panier == null) {
     return [];
   } else {
-    try { // permet d'éviter une cassure dans l'exécution du code
+    try {
+      // permet d'éviter une cassure dans l'exécution du code
       return JSON.parse(panier);
     } catch (e) {
       return [];
@@ -103,5 +104,76 @@ if (cartItems) {
     if (item) changeQuantity(item, input);
   });
 }
+const emailRegex =
+  /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
 
+document
+  .querySelector(".cart__order__form")
+  .addEventListener("submit", function (event) {
+    event.preventDefault();
+    let isValid = true;
+    for (const input of this.elements) {
+      const errorMsg = input.nextElementSibling;
+      switch (input.type) {
+        case "text":
+          if (!input.value.length) {
+            switch (input.name) {
+              case "firstName":
+                errorMsg.textContent = "Veuillez saisir votre prénom";
+                break;
+              case "lastName":
+                errorMsg.textContent = "Veuillez saisir votre nom";
+                break;
+              case "address":
+                errorMsg.textContent = "Veuillez saisir votre adresse";
+                break;
+              case "city":
+                errorMsg.textContent = "Veuillez saisir votre ville";
+                break;
+            }
+            isValid = false;
+          } else {
+            errorMsg.textContent = null;
+          }
+          break;
+        case "email":
+          if (!emailRegex.test(input.value)) {
+            errorMsg.textContent = "Veuillez saisir une adresse email valide";
+            isValid = false;
+          } else {
+            errorMsg.textContent = null;
+          }
+          break;
+      }
+    }
 
+    if (isValid) {
+      const obj = {
+        contact: {
+          firstName: this.elements.firstName.value,
+          lastName: this.elements.lastName.value,
+          address: this.elements.address.value,
+          city: this.elements.city.value,
+          email: this.elements.email.value,
+        },
+        products: getBasket().map(function(item) { //map retourne un tableau avec seulement l'élement précisé
+          return item.id
+        }),
+      };
+      // console.log(obj);
+
+      fetch("http://localhost:3000/api/products/order", {
+        method: "POST",
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(obj)
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log(data);
+        location = 'confirmation.html?orderId=' + data.orderId;
+      });
+    }
+  });
