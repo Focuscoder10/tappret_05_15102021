@@ -1,3 +1,4 @@
+// boucle sur le panier et function qui crée un des éléments html avec les variables requises type img, id name etc
 getBasket().forEach(function (article) {
   let showCart = document.getElementById("cart__items");
   showCart.innerHTML += `<article class="cart__item" data-id="${article.id}">
@@ -22,6 +23,7 @@ getBasket().forEach(function (article) {
   </div>
 </article>`;
 });
+//appel de function pour le calcul du prix et de la quantité
 calcBasket();
 
 totalQuantity = document.getElementById("totalQuantity");
@@ -32,7 +34,7 @@ function saveBasket(panier) {
   localStorage.setItem("panier", JSON.stringify(panier));
   calcBasket();
 }
-//récupération du local storage
+//récupération du local storage de la clé panier
 function getBasket() {
   let panier = localStorage.getItem("panier");
   if (panier == null) {
@@ -46,7 +48,7 @@ function getBasket() {
     }
   }
 }
-
+//function permettant de changer la quantité d'un produit(ajout et supp) via l'id de ce dernier
 function changeQuantity(product, input) {
   let panier = getBasket();
   let foundProduct = panier.find((p) => p.id == product.dataset.id); //recherche si l'id du produit éxiste déjà
@@ -60,7 +62,7 @@ function changeQuantity(product, input) {
     }
   }
 }
-
+//function parcourant le panier et ajoutant à count la quantité d'item présent ainsi qu'à somme le prix par multiplication du prix par la quantité
 function calcBasket() {
   let panier = getBasket();
   let count = 0;
@@ -73,30 +75,24 @@ function calcBasket() {
   totalPrice.textContent = somme;
 }
 
-//supprimer un produit du panier
+//function visant à supprimer un produit du panier
 function removeFromBasket(product) {
   let panier = getBasket();
   panier = panier.filter((i) => i.id != product.dataset.id); //! = retire seulement l'id demandé
   saveBasket(panier);
   product.remove();
 }
-//   let btnSupp = document.querySelector(".deleteItem");
-// btnSupp.addEventListener("click", removeFromBasket);
-// btnSupp.addEventListener("click", () => {
-//   removeFromBasket('truc');
-// });
-// btnSupp.addEventListener("click", removeFromBasket.bind(null, 'truc'));
-//  //Sélection du bouton supprimer
-//   let childSupp = document.getElementsByClassName("cart__item__content__settings__delete");
-//déléguation d'évènement
+
 const cartItems = document.getElementById("cart__items");
 if (cartItems) {
+  //function qui permet de supprimer un produit si pas de btn trouvé on arrête le code sinon on suprimme .cart__item grâce à l'appel de function removeFromBasket
   cartItems.addEventListener("click", function (event) {
     const btn = event.target.closest(".deleteItem");
     if (!btn) return;
     const item = btn.closest(".cart__item");
     if (item) removeFromBasket(item);
   });
+  //function qui permet de modifier la quantité si pas de bouton on arrête le code sinon on change la quantité via un appel de function sur l'input
   cartItems.addEventListener("change", function (event) {
     const input = event.target.closest("input[type=number]");
     if (!input) return;
@@ -104,49 +100,67 @@ if (cartItems) {
     if (item) changeQuantity(item, input);
   });
 }
+
+//regex
 const emailRegex =
   /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
 
+//regex excluante
+const numberRegex = /\d/; // \d -> [0-9]
+
+
+// function qui vérifie si une des deux conditions est remplit (il n'y a pas de valeur ou un nombre est présent)
+function isInvalid(input) {
+  return !input.value.length || numberRegex.test(input.value);
+}
+
 document
   .querySelector(".cart__order__form")
+  //la function à la souscription si après appel de la function isInvalid celle ci trouve une occurence alors le msg d'erreur s'affiche
+  // sauf pour le cas de l'adresse ou c'est uniquement l'absence de remplissage du champ qui retourne une erreur.
+  // et pour l'adresse email ou il y a une retour d'erreur si les règles de l'emailRegex ne son pas respectées.
   .addEventListener("submit", function (event) {
     event.preventDefault();
     let isValid = true;
     for (const input of this.elements) {
+      // ne prend que ce qui sera soumis par le formulaire
       const errorMsg = input.nextElementSibling;
-      switch (input.type) {
-        case "text":
-          if (!input.value.length) {
-            switch (input.name) {
-              case "firstName":
-                errorMsg.textContent = "Veuillez saisir votre prénom";
-                break;
-              case "lastName":
-                errorMsg.textContent = "Veuillez saisir votre nom";
-                break;
-              case "address":
-                errorMsg.textContent = "Veuillez saisir votre adresse";
-                break;
-              case "city":
-                errorMsg.textContent = "Veuillez saisir votre ville";
-                break;
-            }
+      if (!errorMsg) continue;
+      errorMsg.textContent = null;
+      switch (input.name) {
+        case "firstName":
+          if (isInvalid(input)) {
+            errorMsg.textContent = "Veuillez saisir votre prénom";
             isValid = false;
-          } else {
-            errorMsg.textContent = null;
+          }
+          break;
+        case "lastName":
+          if (isInvalid(input)) {
+            errorMsg.textContent = "Veuillez saisir votre nom";
+            isValid = false;
+          }
+          break;
+        case "city":
+          if (isInvalid(input)) {
+            errorMsg.textContent = "Veuillez saisir votre ville";
+            isValid = false;
+          }
+          break;
+        case "address":
+          if (!input.value.length) {
+            errorMsg.textContent = "Veuillez saisir votre adresse";
+            isValid = false;
           }
           break;
         case "email":
           if (!emailRegex.test(input.value)) {
             errorMsg.textContent = "Veuillez saisir une adresse email valide";
             isValid = false;
-          } else {
-            errorMsg.textContent = null;
           }
           break;
       }
     }
-
+    //si isValid après exécution du code ci-dessus est "true" alors on crée l'objet avec les sous-objets contact et products.
     if (isValid) {
       const obj = {
         contact: {
@@ -156,24 +170,28 @@ document
           city: this.elements.city.value,
           email: this.elements.email.value,
         },
-        products: getBasket().map(function(item) { //map retourne un tableau avec seulement l'élement précisé
-          return item.id
+        //function avec map qui retourne un tableau avec seulement l'élement précisé
+        products: getBasket().map(function (item) {
+          return item.id;
         }),
       };
-      // console.log(obj);
+      console.log(obj);
 
+      //method post pour envoyer une app/json sur notre API
       fetch("http://localhost:3000/api/products/order", {
         method: "POST",
         headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(obj)
+        body: JSON.stringify(obj),
       })
-      .then(res => res.json())
-      .then(data => {
-        console.log(data);
-        location = 'confirmation.html?orderId=' + data.orderId;
-      });
+        .then((res) => res.json())
+        .then((data) => {
+          console.log(data);
+          //représente l'emplacement de l'objet à laquelle elle est lié
+          location = "confirmation.html?orderId=" + data.orderId;
+        })
+        .catch((err) => console.error(err));
     }
   });
