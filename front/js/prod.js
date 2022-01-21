@@ -60,11 +60,11 @@ fetch("http://localhost:3000/api/products/" + id)
       //object "newData" contenant les informations produits
       let newData = {
         id: data._id,
-        name: data.name,
-        price: data.price,
-        description: data.description,
-        image: data.imageUrl,
-        txt: data.altTxt,
+        // name: data.name,
+        // price: data.price,
+        // description: data.description,
+        // image: data.imageUrl,
+        // txt: data.altTxt,
         quantity: qty,
         color: selectColor.value,
       };

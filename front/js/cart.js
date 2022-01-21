@@ -1,20 +1,22 @@
 // boucle sur le panier et function qui crée un des éléments html avec les variables requises type img, id name etc
-getBasket().forEach(function (article) {
-  let showCart = document.getElementById("cart__items");
-  showCart.innerHTML += `<article class="cart__item" data-id="${article.id}">
+const showCart = document.getElementById("cart__items");
+getBasket().forEach(async function (item) {
+  const article = await getArticle(item.id);
+  if (!article) return;
+  showCart.innerHTML += `<article class="cart__item" data-id="${article._id}">
   <div class="cart__item__img">
-    <img src="${article.image}" alt="${article.txt}">
+    <img src="${article.imageUrl}" alt="${article.altTxt}">
   </div>
   <div class="cart__item__content">
     <div class="cart__item__content__titlePrice">
       <h2>${article.name}</h2>
       <p>${article.price},00 €</p>
-      <p>${article.color}</p>
+      <p>${item.color}</p>
     </div>
     <div class="cart__item__content__settings">
       <div class="cart__item__content__settings__quantity">
         <p>Qté : </p>
-        <input type="number" class="" name="${article.name}" min="1" max="100" value="${article.quantity}">
+        <input type="number" class="" name="${article.name}" min="1" max="100" value="${item.quantity}">
       </div>
       <div class="cart__item__content__settings__delete">
         <p class="deleteItem">Supprimer</p>
@@ -25,6 +27,13 @@ getBasket().forEach(function (article) {
 });
 //appel de function pour le calcul du prix et de la quantité
 calcBasket();
+
+//function asynchrone qui interroge l'api afin de recevoir les informations de cettes dernière
+async function getArticle(id) {
+  return fetch("http://localhost:3000/api/products/" + id)
+    .then((res) => res.json())
+    .catch((e) => null);
+}
 
 totalQuantity = document.getElementById("totalQuantity");
 totalPrice = document.getElementById("totalPrice");
@@ -62,17 +71,27 @@ function changeQuantity(product, input) {
     }
   }
 }
-//function parcourant le panier et ajoutant à count la quantité d'item présent ainsi qu'à somme le prix par multiplication du prix par la quantité
-function calcBasket() {
-  let panier = getBasket();
-  let count = 0;
-  let somme = 0;
-  panier.forEach((item) => {
-    count += item.quantity;
-    somme += item.price * item.quantity;
+//function asynchrone qui effectue une promesse pour récupérer des elements id quantity etc en mélangeant les infos récup de l'api et celle du panier
+async function calcBasket() {
+  const promises = getBasket().map(async (item) => {
+    const article = await getArticle(item.id);
+    if(!article) return null;
+    article.id = item.id;
+    article.quantity = item.quantity;
+    article.color = item.color;
+    return article;
   });
-  totalQuantity.textContent = count;
-  totalPrice.textContent = somme;
+  // la promise attends la validation de tte les promesses avant éxécution du reste du code (calcul des quantités et prix)
+  Promise.all(promises).then((data) => {
+    let count = 0;
+    let somme = 0;
+    data.forEach((article) => {
+      count += article.quantity;
+      somme += article.price * article.quantity;
+    });
+    totalQuantity.textContent = count;
+    totalPrice.textContent = somme;
+  });
 }
 
 //function visant à supprimer un produit du panier
@@ -107,7 +126,6 @@ const emailRegex =
 
 //regex excluante
 const numberRegex = /\d/; // \d -> [0-9]
-
 
 // function qui vérifie si une des deux conditions est remplit (il n'y a pas de valeur ou un nombre est présent)
 function isInvalid(input) {
