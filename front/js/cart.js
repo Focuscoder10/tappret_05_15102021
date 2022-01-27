@@ -3,7 +3,7 @@ const showCart = document.getElementById("cart__items");
 getBasket().forEach(async function (item) {
   const article = await getArticle(item.id);
   if (!article) return;
-  showCart.innerHTML += `<article class="cart__item" data-id="${article._id}">
+  showCart.innerHTML += `<article class="cart__item" data-id="${article._id}" data-color="${item.color}">
   <div class="cart__item__img">
     <img src="${article.imageUrl}" alt="${article.altTxt}">
   </div>
@@ -60,9 +60,13 @@ function getBasket() {
 //function permettant de changer la quantité d'un produit(ajout et supp) via l'id de ce dernier
 function changeQuantity(product, input) {
   let panier = getBasket();
-  let foundProduct = panier.find((p) => p.id == product.dataset.id); //recherche si l'id du produit éxiste déjà
-  if (foundProduct != undefined) {
+  //cherche un element en fonction de st id
+  //find retourne le 1er elem du tab dt la condition est ok
+  let foundProduct = panier.find((p) => p.id == product.dataset.id && p.color == product.dataset.color); //recherche si l'id du produit éxiste déjà
+  if (foundProduct) {
+    //on converti la valeur en entier
     const quantity = parseInt(input.value, 10);
+    //on change la quantité de l'elmt trouvé
     foundProduct.quantity = quantity; // foundProduct.quantity = foundProduct.quantity + quantity;
     if (foundProduct.quantity <= 0) {
       removeFromBasket(product);
@@ -73,9 +77,12 @@ function changeQuantity(product, input) {
 }
 //function asynchrone qui effectue une promesse pour récupérer des elements id quantity etc en mélangeant les infos récup de l'api et celle du panier
 async function calcBasket() {
+  //construction d'un tab de promesses
   const promises = getBasket().map(async (item) => {
+    //pour chaque elmt du panier on récup le prod de l'api
     const article = await getArticle(item.id);
     if(!article) return null;
+    //on ajoute les les attributs de l'elmt de notre panier
     article.id = item.id;
     article.quantity = item.quantity;
     article.color = item.color;
@@ -97,7 +104,9 @@ async function calcBasket() {
 //function visant à supprimer un produit du panier
 function removeFromBasket(product) {
   let panier = getBasket();
-  panier = panier.filter((i) => i.id != product.dataset.id); //! = retire seulement l'id demandé
+  let foundProduct = panier.find((p) => p.id == product.dataset.id && p.color == product.dataset.color);
+  let index = panier.indexOf(foundProduct);
+  panier.splice(index, 1);
   saveBasket(panier);
   product.remove();
 }
@@ -180,6 +189,7 @@ document
     }
     //si isValid après exécution du code ci-dessus est "true" alors on crée l'objet avec les sous-objets contact et products.
     if (isValid) {
+      let panier = getBasket();
       const obj = {
         contact: {
           firstName: this.elements.firstName.value,
@@ -189,7 +199,7 @@ document
           email: this.elements.email.value,
         },
         //function avec map qui retourne un tableau avec seulement l'élement précisé
-        products: getBasket().map(function (item) {
+        products: panier.map(function (item) {
           return item.id;
         }),
       };
@@ -207,6 +217,8 @@ document
         .then((res) => res.json())
         .then((data) => {
           console.log(data);
+          panier = [];
+          saveBasket(panier);
           //représente l'emplacement de l'objet à laquelle elle est lié
           location = "confirmation.html?orderId=" + data.orderId;
         })

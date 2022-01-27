@@ -29,17 +29,17 @@ fetch("http://localhost:3000/api/products/" + id)
       price = document.getElementById("price"),
       description = document.getElementById("description"),
       colors = document.getElementById("colors");
-    newImg.setAttribute("src", `${data.imageUrl}`); // newImg.src = data.imageUrl
-    newImg.setAttribute("alt", `${data.altTxt}`);
+    newImg.setAttribute("src", data.imageUrl); // newImg.src = data.imageUrl
+    newImg.setAttribute("alt", data.altTxt);
     image.appendChild(newImg);
-    title.innerHTML = `${data.name}`;
-    price.innerHTML = `${data.price}`;
-    description.innerHTML = `${data.description}`;
+    title.innerHTML = data.name;
+    price.innerHTML = data.price;
+    description.innerHTML = data.description;
     //function qui crée un element option lui ajoute l'attribut value et la variable color
     data.colors.forEach((color) => {
       const newColor = document.createElement("option");
-      newColor.setAttribute("value", `${color}`);
-      newColor.textContent = `${color}`;
+      newColor.setAttribute("value", color);
+      newColor.textContent = color;
       colors.appendChild(newColor);
     });
 
@@ -60,11 +60,6 @@ fetch("http://localhost:3000/api/products/" + id)
       //object "newData" contenant les informations produits
       let newData = {
         id: data._id,
-        // name: data.name,
-        // price: data.price,
-        // description: data.description,
-        // image: data.imageUrl,
-        // txt: data.altTxt,
         quantity: qty,
         color: selectColor.value,
       };
@@ -83,6 +78,7 @@ fetch("http://localhost:3000/api/products/" + id)
         console.log("new");
       }
       localStorage.setItem("panier", JSON.stringify(panier));
+      alert("Le produit a bien été ajouté à votre panier");
       console.log(panier);
     });
     
